@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sales Log">
+<meta name="theme-color" content="#c8102e">
+<title>Sales Log</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#c8102e;--ok:#1a7f46;--bd:#e2e0d8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#222221;--tx:#f0efe9;--mu:#9a9a92;--bd:#3a3a37;--ac:#ff5a6e;--ok:#4cc27f}}
+*{box-sizing:border-box}body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,sans-serif;padding:12px 12px 90px;max-width:560px}
+h1{font-size:20px;margin:8px 0}.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{flex:1}
+button,select{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+button.on,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+input,select{font:inherit;width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}.row label{flex:1}.row input[type=number]{width:130px;text-align:right}
+.tot{display:flex;justify-content:space-between;font-weight:700;font-size:18px;border-top:1px solid var(--bd);padding-top:8px;margin-top:8px}
+.mu{color:var(--mu);font-size:13px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 3px;border-bottom:1px solid var(--bd);text-align:right}td:first-child,th:first-child{text-align:left}
+.wrap{overflow-x:auto}.ok{color:var(--ok)}.warn{color:var(--ac)}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+#ck2 table{width:auto;min-width:100%;white-space:nowrap}#ck2 td:first-child,#ck2 th:first-child{position:sticky;left:0;background:var(--card)}
+.dep{border-bottom:1px solid var(--bd);padding:8px 0;font-size:14px}.dep .l{display:flex;justify-content:space-between;gap:8px}
+#nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+#nav button{flex:1;border:0;border-radius:0;background:none;padding:8px 0 6px;font-size:12px;color:var(--mu)}#nav button span{display:block;font-size:20px;line-height:1.2}#nav button.on{background:none;color:var(--ac);font-weight:700}
+#sbar{position:sticky;bottom:calc(66px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:12px;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:5}
+#sinfo{flex:1;font-size:13px;line-height:1.3}#sbar .pri{padding:12px 20px;font-weight:700}
+#msg{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}#msg.show{opacity:1}
+#v1,#v2,#v3{animation:fd .18s}@keyframes fd{from{opacity:.3}to{opacity:1}}
+</style></head><body>
+<h1 style="display:flex;align-items:center;gap:10px"><img src="icon-192.png" width="34" height="34" style="border-radius:8px" alt="">Daily Sales Log</h1>
+<div class="mu" style="margin:-4px 0 10px"><a href="#" id="vb" style="color:inherit"></a></div>
+<div class="card" id="vh" style="display:none"></div>
+<nav id="nav"><button id="t1" class="on"><span>🧾</span>Sales</button><button id="t2"><span>🏦</span>Deposits</button><button id="t3"><span>📊</span>Review</button></nav>
+
+<div id="v1">
+<div class="card"><div style="display:flex;gap:8px"><button id="sprev">◀</button><input type="date" id="date"><button id="snext">▶</button></div><div id="dst" class="mu" style="margin-top:6px"></div></div>
+<div class="card" id="pos"></div>
+<div class="card" id="form"></div>
+<div class="card"><input id="note" placeholder="Note for this day (optional)"></div>
+<div id="sbar"><div id="sinfo"></div><button class="pri" id="save">Save day</button><button id="clr" title="Delete this day">🗑</button></div>
+<div id="msg"></div>
+<div class="card"><b>Previous logs</b> <span class="mu">(tap a day to edit it)</span><input type="month" id="hm" style="margin-top:8px"><div id="hl"></div></div>
+</div>
+
+<div id="v2" style="display:none">
+<div class="card"><b>Record a deposit</b> <span class="mu">(one line per credit in your bank statement)</span>
+<div class="g2"><div><div class="mu">Bank credit date</div><input type="date" id="dd"></div><div><div class="mu">Channel</div><select id="dc"></select></div></div>
+<div class="g2"><div><div class="mu">Sales from</div><input type="date" id="df"></div><div><div class="mu">Sales to</div><input type="date" id="dt"></div></div>
+<div class="g2"><input type="number" inputmode="decimal" step="0.01" id="da" placeholder="Amount deposited"><input id="dr" placeholder="Ref / note"></div>
+<button class="pri" style="width:100%" id="dadd">Add deposit</button><div class="mu" id="dmsg"></div></div>
+<div class="card"><input type="month" id="dm"><div id="dl"></div></div>
+</div>
+
+<div id="v3" style="display:none">
+<div class="tabs"><button id="cv1" class="on">By month</button><button id="cv2">By day</button></div>
+<div id="cmv"><div class="card"><input type="month" id="cm"></div>
+<div class="card wrap" id="ck"></div>
+<div class="card wrap" id="ck2"></div>
+<div class="mu" style="margin:0 4px 12px">"Not paid out yet" = sales that none of your recorded deposits cover. Record the deposit to clear it.</div>
+</div>
+<div id="cdv" style="display:none"><div class="card"><div style="display:flex;gap:8px"><button id="dprev">◀</button><input type="date" id="cd"><button id="dnext">▶</button></div></div><div class="card wrap" id="cdc"></div></div>
+<div style="display:flex;gap:8px"><button style="flex:1" id="bk">Copy backup</button><button style="flex:1" id="rs">Restore</button><button style="flex:1" id="csv">Copy CSV</button></div>
+<div class="mu" id="msg3" style="margin-top:6px"></div>
+</div>
+
+<script>
+const CH=["POS 1 (Cash)","POS 2 (Cash)","Grab","foodpanda","GCash","QRPH","PayMaya Debit","PayMaya Credit","Pandago","Gift Certificate"];
+const CASH="Cash (POS 1 + 2)";
+const DC=[CASH,...CH.slice(2,9)];
+let D={},P=[];const K="saleslog_v1",KP="saleslog_dep_v1";
+try{D=JSON.parse(localStorage.getItem(K)||"{}");P=JSON.parse(localStorage.getItem(KP)||"[]")}catch(e){}
+Object.values(D).forEach(r=>{if(r.a&&r.a.Cash!=null){r.a["POS 1 (Cash)"]=(r.a["POS 1 (Cash)"]||0)+r.a.Cash;delete r.a.Cash}});
+function persist(){try{localStorage.setItem(K,JSON.stringify(D));localStorage.setItem(KP,JSON.stringify(P))}catch(e){alert("Could not save on this browser")}}
+const $=id=>document.getElementById(id);
+const fmt=n=>"₱"+(n||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const addDay=(s,n)=>{const d=new Date(s+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const chs=c=>c==CASH?["POS 1 (Cash)","POS 2 (Cash)"]:[c];
+const sales=(c,d)=>chs(c).reduce((s,x)=>s+((D[d]&&D[d].a[x])||0),0);
+const salesRange=(c,f,t)=>Object.keys(D).filter(d=>d>=f&&d<=t).reduce((s,d)=>s+sales(c,d),0);
+
+$("pos").innerHTML="<b>1 · Sales summary</b> <span class=\"mu\">from the POS Z-reading</span>"+[["g","Gross sales"],["x","Discounts"],["f","Refunds / voids"]].map(([k,l])=>`<div class="row"><label>${l}</label><input type="number" inputmode="decimal" step="0.01" id="${k}" placeholder="0.00"></div>`).join("")+`<div class="tot"><span>Net sales</span><span id="net">₱0.00</span></div>`;
+$("form").innerHTML="<b>2 · Collections by channel</b> <span class=\"mu\">how customers paid</span>"+CH.map((c,i)=>`<div class="row"><label>${c}</label><input type="number" inputmode="decimal" step="0.01" id="a${i}" placeholder="0.00"></div>`).join("")+`<div class="tot"><span>Total collections</span><span id="tot">₱0.00</span></div><div class="mu" id="chk"></div>`;
+const nv=id=>parseFloat($(id).value)||0;
+function tot(){const col=CH.reduce((s,c,i)=>s+nv("a"+i),0);const net=nv("g")-nv("x")-nv("f");$("tot").textContent=fmt(col);$("net").textContent=fmt(net);const d=col-net;$("chk").innerHTML=nv("g")?(Math.abs(d)<0.5?'<span class="ok">Collections match net sales ✓</span>':'<span class="warn">Collections vs net: '+fmt(d)+(d>0?' over':' short')+'</span>'):''}
+const tot0=tot;tot=function(){tot0();$("sinfo").innerHTML="<b>"+$("tot").textContent+"</b> collected<br>"+($("chk").innerHTML||'<span class="mu">Enter gross sales to check</span>')};CH.forEach((c,i)=>$("a"+i).addEventListener("input",tot));["g","x","f"].forEach(k=>$(k).addEventListener("input",tot));
+function load(){const r=D[$("date").value]||{a:{},n:""};CH.forEach((c,i)=>$("a"+i).value=r.a[c]??"");["g","x","f"].forEach(k=>$(k).value=r[k]??"");$("note").value=r.n||"";tot();dirty=false;prevDate=$("date").value;status()}
+$("date").value=today();
+$("save").onclick=()=>{const r={a:{},n:$("note").value};["g","x","f"].forEach(k=>{const v=parseFloat($(k).value);if(v)r[k]=v});CH.forEach((c,i)=>{const v=parseFloat($("a"+i).value);if(v)r.a[c]=v});D[$("date").value]=r;persist();toast("Saved ✓");dirty=false;status();hist()};
+$("clr").onclick=()=>{if(confirm("Delete this day's entry?")){delete D[$("date").value];persist();load();hist()}};
+
+$("dc").innerHTML=DC.map(c=>`<option>${c}</option>`).join("");
+$("dd").value=today();
+function prefill(){const c=$("dc").value;const last=P.filter(p=>p.c==c).map(p=>p.t).sort().pop();$("df").value=last?addDay(last,1):"";$("dt").value=addDay(today(),-1)}
+$("dc").onchange=prefill;prefill();
+$("dadd").onclick=()=>{const a=parseFloat($("da").value);if(!a||!$("dd").value||!$("df").value||!$("dt").value){$("dmsg").textContent="Fill in date, amount and sales range";return}
+const o={id:EID||Date.now(),d:$("dd").value,c:$("dc").value,a,f:$("df").value,t:$("dt").value,r:$("dr").value,ok:0};if(EID){const i=P.findIndex(x=>x.id==EID);o.ok=P[i].ok;P[i]=o}else P.push(o);const ed=EID;EID=null;$("dadd").textContent="Add deposit";persist();$("da").value="";$("dr").value="";prefill();$("dmsg").textContent=ed?"Changes saved ✓":"Added ✓";dlist()};
+$("dm").value=today().slice(0,7);$("dm").onchange=dlist;
+function dlist(){const m=$("dm").value;const L=P.filter(p=>p.d.startsWith(m)).sort((a,b)=>b.d.localeCompare(a.d));
+$("dl").innerHTML=L.length?L.map(p=>{const s=salesRange(p.c,p.f,p.t),df=s-p.a,pc=s?df/s*100:0;
+return `<div class="dep"><div class="l"><b>${p.d} · ${p.c}</b><b>${fmt(p.a)}</b></div><div class="mu">Sales ${p.f} → ${p.t}: ${fmt(s)} · diff <span class="${Math.abs(pc)>35||df<0?"warn":""}">${fmt(df)} (${pc.toFixed(1)}%)</span>${p.r?" · "+p.r:""}</div><div class="l" style="margin-top:4px"><label><input type="checkbox" data-i="${p.id}" ${p.ok?"checked":""} style="width:auto"> seen in bank</label><span><button data-e="${p.id}" style="padding:4px 10px">Edit</button> <button data-x="${p.id}" style="padding:4px 10px">Delete</button></span></div></div>`}).join(""):'<div class="mu" style="margin-top:8px">No deposits this month</div>';
+document.querySelectorAll("#dl [data-i]").forEach(e=>e.onchange=()=>{P.find(p=>p.id==e.dataset.i).ok=e.checked?1:0;persist()});
+document.querySelectorAll("#dl [data-e]").forEach(e=>e.onclick=()=>{const p=P.find(x=>x.id==e.dataset.e);EID=p.id;$("dd").value=p.d;$("dc").value=p.c;$("df").value=p.f;$("dt").value=p.t;$("da").value=p.a;$("dr").value=p.r||"";$("dadd").textContent="Save changes";$("dmsg").textContent="Editing a deposit. Tap Save changes when done.";window.scrollTo(0,0)});
+document.querySelectorAll("#dl [data-x]").forEach(e=>e.onclick=()=>{if(confirm("Delete this deposit?")){P=P.filter(p=>p.id!=e.dataset.x);persist();dlist()}})}
+
+$("cm").value=today().slice(0,7);$("cm").onchange=check;
+function check(){const m=$("cm").value;let h="<table><tr><th>Channel</th><th>Sales</th><th>Not paid out yet</th><th>Deposited</th></tr>";let T=[0,0,0];
+const awaiting=c=>{const cov=P.filter(p=>p.c==c);return Object.keys(D).filter(d=>!cov.some(p=>d>=p.f&&d<=p.t)).reduce((s,d)=>s+sales(c,d),0)};
+DC.forEach(c=>{const s=Object.keys(D).filter(d=>d.startsWith(m)).reduce((x,d)=>x+sales(c,d),0);const aw=awaiting(c);const dp=P.filter(p=>p.c==c&&p.d.startsWith(m)).reduce((x,p)=>x+p.a,0);T[0]+=s;T[1]+=aw;T[2]+=dp;
+h+=`<tr><td>${c}</td><td>${fmt(s)}</td><td class="${aw>0?"warn":"ok"}">${fmt(aw)}</td><td>${fmt(dp)}</td></tr>`});
+const gc=Object.keys(D).filter(d=>d.startsWith(m)).reduce((x,d)=>x+sales("Gift Certificate",d),0);
+h+=`<tr><td>Gift Certificate</td><td>${fmt(gc)}</td><td class="mu">n/a</td><td class="mu">n/a</td></tr>`;T[0]+=gc;
+h+=`<tr><th>Total</th><th>${fmt(T[0])}</th><th>${fmt(T[1])}</th><th>${fmt(T[2])}</th></tr></table>`;
+const ds=Object.keys(D).filter(d=>d.startsWith(m));const S=k=>ds.reduce((x,d)=>x+(D[d][k]||0),0);const g=S("g"),xx=S("x"),ff=S("f"),nt=g-xx-ff;h+=`<table style="margin-top:12px"><tr><td>Gross sales</td><td>${fmt(g)}</td></tr><tr><td>Discounts</td><td>${fmt(xx)}</td></tr><tr><td>Refunds / voids</td><td>${fmt(ff)}</td></tr><tr><th>Net sales</th><th>${fmt(nt)}</th></tr><tr><td>Collections (all channels)</td><td>${fmt(T[0])}</td></tr><tr><td>Difference</td><td class="${Math.abs(T[0]-nt)<1?"ok":"warn"}">${fmt(T[0]-nt)}</td></tr></table>`;
+const bad=P.filter(p=>p.d.startsWith(m)&&!p.ok).length;h+=`<div class="mu" style="margin-top:8px">${bad} deposit(s) not yet ticked "seen in bank"</div>`;$("ck").innerHTML=h;daily(ds)}
+
+const VERSION="2.0",VDATE="10 Oct 2026";
+const LOG=[["2.0","Simpler layout: bottom menu bar, Save button always visible, previous/next day arrows, unsaved-changes warning, clearer wording; expected fee % removed for now"],["1.9","Expected fee % per channel: deposits show expected payout and flag unusual ones; included in backup"],["1.8","Previous logs: clearer message when a month has no saved days; opens on the latest month that has data"],["1.7","Check tab: By day view (pick any date: sales per channel, payout status, net check, bank credits that day)"],["1.6","Check tab: daily breakdown table for the month (every day, every channel) for double checking"],["1.5","Previous logs list on the Sales tab (tap a day to edit it); deposits can now be edited"],["1.4","Version number and change history shown in the app; app always fetches the latest files"],["1.3","Gross sales, discounts, refunds/voids and net sales; collections vs net check"],["1.2","App icon, installable on home screen, works offline"],["1.1","POS 1 and POS 2 cash; Deposits tab; Check tab; backup and restore"],["1.0","Daily sales by payment channel; month summary"]];
+$("vb").textContent="Version "+VERSION+" · "+VDATE+" — tap for history";
+$("vb").onclick=e=>{e.preventDefault();const v=$("vh");v.style.display=v.style.display=="none"?"":"none"};
+$("vh").innerHTML="<b>Version history</b>"+LOG.map(l=>`<div class="dep"><b>${l[0]}</b>${l[0]==VERSION?' <span class="ok">(current)</span>':''}<div class="mu">${l[1]}</div></div>`).join("");
+const f2=n=>n.toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
+function daily(ds){const ks=ds.slice().sort();
+if(!ks.length){$("ck2").innerHTML='<b>Daily breakdown</b><div class="mu">No entries this month</div>';return}
+const T=CH.map(()=>0);let tt=0,tg=0,tx=0,tf=0;
+let h='<b>Daily breakdown</b> <span class="mu">(tap a day to edit it; scroll sideways)</span><table style="margin-top:6px"><tr><th>Date</th>'+CH.map(c=>`<th>${c}</th>`).join("")+'<th>Total</th><th>Gross</th><th>Disc.</th><th>Refund</th><th>Net</th></tr>';
+ks.forEach(k=>{const r=D[k];const col=CH.reduce((x,c,i)=>{const v=r.a[c]||0;T[i]+=v;return x+v},0);const g=r.g||0,xx=r.x||0,ff=r.f||0,net=g-xx-ff;tt+=col;tg+=g;tx+=xx;tf+=ff;const bad=g&&Math.abs(col-net)>=0.5;
+h+=`<tr data-k="${k}" style="cursor:pointer"><td>${k.slice(5)}</td>${CH.map(c=>`<td>${r.a[c]?f2(r.a[c]):"–"}</td>`).join("")}<td><b>${f2(col)}</b></td><td>${g?f2(g):"–"}</td><td>${xx?f2(xx):"–"}</td><td>${ff?f2(ff):"–"}</td><td class="${bad?"warn":""}">${g?f2(net):"–"}</td></tr>`});
+h+=`<tr><th>Total</th>${T.map(v=>`<th>${f2(v)}</th>`).join("")}<th>${f2(tt)}</th><th>${f2(tg)}</th><th>${f2(tx)}</th><th>${f2(tf)}</th><th>${f2(tg-tx-tf)}</th></tr></table><div class="mu" style="margin-top:6px">Red net = collections don't match net sales that day.</div>`;
+$("ck2").innerHTML=h;
+document.querySelectorAll("#ck2 tr[data-k]").forEach(e=>e.onclick=()=>{goDate(e.dataset.k);show(1);window.scrollTo(0,0)})}
+let EID=null;
+$("hm").value=today().slice(0,7);{const m=Object.keys(D).sort().pop();if(m&&!Object.keys(D).some(k=>k.startsWith($("hm").value)))$("hm").value=m.slice(0,7)}$("hm").onchange=hist;
+function hist(){const ks=Object.keys(D).filter(k=>k.startsWith($("hm").value)).sort().reverse();
+$("hl").innerHTML=ks.length?ks.map(k=>{const r=D[k];const col=CH.reduce((x,c)=>x+(r.a[c]||0),0);const net=(r.g||0)-(r.x||0)-(r.f||0);return `<div class="dep" data-k="${k}" style="cursor:pointer"><div class="l"><b>${k}${k==$("date").value?" ✎":""}</b><b>${fmt(col)}</b></div><div class="mu">${r.g?"Net "+fmt(net)+" · ":""}${r.n||""}</div></div>`}).join(""):'<div class="mu" style="margin-top:8px">No saved days in this month yet. Enter amounts above and tap Save day (you should see "Saved ✓"). '+(Object.keys(D).length?'You have '+Object.keys(D).length+' saved day(s) in other months, so change the month above.':'')+'</div>';
+document.querySelectorAll("#hl .dep").forEach(e=>e.onclick=()=>{goDate(e.dataset.k);window.scrollTo(0,0)})}
+hist();
+function cview(n){$("cmv").style.display=n==1?"":"none";$("cdv").style.display=n==2?"":"none";$("cv1").className=n==1?"on":"";$("cv2").className=n==2?"on":"";if(n==2)dayview();else check()}
+$("cv1").onclick=()=>cview(1);$("cv2").onclick=()=>cview(2);
+$("cd").value=today();$("cd").onchange=dayview;
+$("dprev").onclick=()=>{$("cd").value=addDay($("cd").value,-1);dayview()};$("dnext").onclick=()=>{$("cd").value=addDay($("cd").value,1);dayview()};
+function dayview(){const d=$("cd").value;if(!d)return;const r=D[d]||{a:{}};
+let h='<b>'+d+'</b>'+(D[d]?'':' <span class="mu">(no sales entry)</span>')+'<table style="margin-top:6px"><tr><th>Channel</th><th>Sales</th><th>Payout</th></tr>';
+CH.forEach(c=>{const v=r.a[c]||0;let st='';
+if(c=="Gift Certificate")st='<span class="mu">n/a</span>';
+else if(v){const dc=c.indexOf("POS")==0?CASH:c;const p=P.find(x=>x.c==dc&&d>=x.f&&d<=x.t);st=p?`<span class="${p.ok?"ok":""}">${p.d}${p.ok?" ✓":""}</span>`:'<span class="warn">Not yet paid</span>'}
+else st='<span class="mu">–</span>';
+h+=`<tr><td>${c}</td><td>${v?f2(v):"–"}</td><td>${st}</td></tr>`});
+const col=CH.reduce((x,c)=>x+(r.a[c]||0),0),g=r.g||0,xx=r.x||0,ff=r.f||0,net=g-xx-ff;
+h+=`<tr><th>Total collections</th><th>${f2(col)}</th><th></th></tr></table><table style="margin-top:12px"><tr><td>Gross sales</td><td>${f2(g)}</td></tr><tr><td>Discounts</td><td>${f2(xx)}</td></tr><tr><td>Refunds / voids</td><td>${f2(ff)}</td></tr><tr><th>Net sales</th><th>${f2(net)}</th></tr><tr><td>Difference (collections − net)</td><td class="${!g||Math.abs(col-net)<0.5?"ok":"warn"}">${g?f2(col-net):"–"}</td></tr></table>`;
+if(r.n)h+='<div class="mu" style="margin-top:6px">Note: '+r.n+'</div>';
+const dp=P.filter(p=>p.d==d);
+h+='<div style="margin-top:14px"><b>Bank credits on this date</b></div>'+(dp.length?'<table>'+dp.map(p=>`<tr><td>${p.c}</td><td>${f2(p.a)}</td><td>${p.f.slice(5)}→${p.t.slice(5)}${p.ok?" ✓":""}</td></tr>`).join("")+'</table>':'<div class="mu">None recorded</div>');
+h+='<div class="mu" style="margin-top:8px">Payout column = bank credit date of the deposit covering that day. ✓ = seen in bank.</div><button style="width:100%;margin-top:10px" id="cedit">Edit this day</button>';
+$("cdc").innerHTML=h;$("cedit").onclick=()=>{$("date").value=d;load();hist();show(1);window.scrollTo(0,0)}}
+let dirty=false,prevDate=$("date").value;
+function status(){const has=!!D[$("date").value];$("dst").innerHTML=dirty?'<span class="warn">● Unsaved changes</span>':has?'<span class="ok">● Saved</span>':'<span class="mu">○ No entry yet for this day</span>'}
+function toast(t){const m=$("msg");m.textContent=t;m.className="show";clearTimeout(window._tt);window._tt=setTimeout(()=>{m.className=""},1800)}
+function goDate(d){$("date").value=d;$("date").onchange()}
+$("date").onchange=()=>{if(dirty&&!confirm("You have unsaved changes for this day. Leave without saving?")){$("date").value=prevDate;return}load();hist()};
+$("sprev").onclick=()=>goDate(addDay($("date").value,-1));$("snext").onclick=()=>goDate(addDay($("date").value,1));
+["pos","form"].forEach(id=>$(id).addEventListener("input",()=>{dirty=true;status()}));$("note").addEventListener("input",()=>{dirty=true;status()});
+document.addEventListener("focusin",e=>{if(e.target.type=="number")setTimeout(()=>{try{e.target.select()}catch(x){}},0)});
+function show(n){[1,2,3].forEach(i=>{$("v"+i).style.display=i==n?"":"none";$("t"+i).className=i==n?"on":""});if(n==2)dlist();if(n==3)check()}
+[1,2,3].forEach(i=>$("t"+i).onclick=()=>show(i));
+async function cp(t,ok){try{await navigator.clipboard.writeText(t);$("msg3").textContent=ok}catch(e){$("msg3").textContent="Copy blocked by browser"}}
+$("bk").onclick=()=>cp(JSON.stringify({D,P}),"Backup copied — paste it somewhere safe (Notes, Viber to yourself)");
+$("rs").onclick=()=>{const t=prompt("Paste backup text. This replaces current data.");if(!t)return;try{const o=JSON.parse(t);D=o.D||{};P=o.P||[];persist();load();hist();$("msg3").textContent="Restored ✓"}catch(e){$("msg3").textContent="That text isn't a valid backup"}};
+$("csv").onclick=()=>{const m=$("cm").value;const ks=Object.keys(D).filter(k=>k.startsWith(m)).sort();cp(["Date,"+CH.join(",")+",Total,Gross,Discounts,Refunds"].concat(ks.map(k=>[k,...CH.map(c=>D[k].a[c]||0),CH.reduce((x,c)=>x+(D[k].a[c]||0),0),D[k].g||0,D[k].x||0,D[k].f||0].join(","))).join("\n"),"Month sales CSV copied")};
+load();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
